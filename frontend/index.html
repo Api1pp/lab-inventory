@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab Inventory Catalog - Kelompok K</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f3f5f9; color: #1f2937; }
+    header { background: #b91c1c; color: #fff; padding: 20px 24px; }
+    header h1 { margin: 0 0 4px; font-size: 24px; }
+    header p { margin: 0; opacity: .85; font-size: 14px; }
+    main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .card h2 { margin: 0 0 14px; font-size: 18px; }
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
+    label { display: block; font-size: 13px; margin-bottom: 4px; color: #4b5563; }
+    input, select { width: 100%; padding: 9px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+    button { padding: 10px 16px; border: 0; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .btn-add { background: #b91c1c; color: #fff; }
+    .btn-add:hover { background: #991b1b; }
+    .btn-del { background: #fee2e2; color: #b91c1c; padding: 6px 12px; }
+    .btn-del:hover { background: #fecaca; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
+    th { background: #f9fafb; color: #6b7280; font-weight: 600; }
+    .empty { text-align: center; color: #9ca3af; padding: 24px; }
+    .badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .Tersedia { background: #dcfce7; color: #166534; }
+    .Dipinjam { background: #fef3c7; color: #92400e; }
+    .Rusak { background: #fee2e2; color: #991b1b; }
+    #message { display: none; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 14px; }
+    #message.ok { display: block; background: #dcfce7; color: #166534; }
+    #message.error { display: block; background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lab Inventory Catalog</h1>
+    <p>Pencatatan peminjaman &amp; ketersediaan alat laboratorium (Mikrotik, Modem, Kabel) - Kelompok K</p>
+  </header>
+
+  <main>
+    <div id="message"></div>
+
+    <section class="card">
+      <h2>Tambah Alat Baru</h2>
+      <form id="item-form">
+        <div><label for="name">Nama alat</label>
+          <input id="name" required placeholder="contoh: Mikrotik hAP ac2"></div>
+        <div><label for="category">Kategori</label>
+          <select id="category">
+            <option>Mikrotik</option><option>Modem</option><option>Kabel</option><option>Lainnya</option>
+          </select></div>
+        <div><label for="quantity">Jumlah</label>
+          <input id="quantity" type="number" min="0" value="1" required></div>
+        <div><label for="status">Status</label>
+          <select id="status">
+            <option>Tersedia</option><option>Dipinjam</option><option>Rusak</option>
+          </select></div>
+        <div><label for="borrower">Peminjam (opsional)</label>
+          <input id="borrower" placeholder="nama peminjam"></div>
+        <div><button class="btn-add" type="submit">+ Tambah</button></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Katalog Alat (<span id="count">0</span>)</h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Nama</th><th>Kategori</th><th>Jumlah</th><th>Status</th><th>Peminjam</th><th>Aksi</th></tr>
+        </thead>
+        <tbody id="item-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const API = "/inventory";
+    const form = document.getElementById("item-form");
+    const tbody = document.getElementById("item-body");
+    const msg = document.getElementById("message");
+    const count = document.getElementById("count");
+    let msgTimer;
+
+    function showMessage(text, type) {
+      msg.textContent = text;
+      msg.className = type;
+      clearTimeout(msgTimer);
+      msgTimer = setTimeout(() => { msg.className = ""; }, 4000);
+    }
+
+    async function loadItems() {
+      try {
+        const res = await fetch(API);
+        if (!res.ok) throw new Error("Gagal memuat data (kode " + res.status + ")");
+        render(await res.json());
+      } catch (err) {
+        showMessage(err.message, "error");
+      }
+    }
+
+    function cell(text) {
+      const td = document.createElement("td");
+      td.textContent = text;
+      return td;
+    }
+
+    function render(items) {
+      tbody.replaceChildren();
+      count.textContent = items.length;
+
+      if (items.length === 0) {
+        const tr = document.createElement("tr");
+        const td = cell("Belum ada alat di katalog.");
+        td.colSpan = 7;
+        td.className = "empty";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      items.forEach((item, index) => {
+        const tr = document.createElement("tr");
+        tr.appendChild(cell(index + 1));
+        tr.appendChild(cell(item.name));
+        tr.appendChild(cell(item.category));
+        tr.appendChild(cell(item.quantity));
+
+        const statusTd = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = "badge " + item.status;
+        badge.textContent = item.status;
+        statusTd.appendChild(badge);
+        tr.appendChild(statusTd);
+
+        tr.appendChild(cell(item.borrower || "-"));
+
+        const actionTd = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.className = "btn-del";
+        btn.textContent = "Hapus";
+        btn.onclick = () => deleteItem(index, item.name);
+        actionTd.appendChild(btn);
+        tr.appendChild(actionTd);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById("name").value,
+        category: document.getElementById("category").value,
+        quantity: document.getElementById("quantity").value,
+        status: document.getElementById("status").value,
+        borrower: document.getElementById("borrower").value,
+      };
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Gagal menambah alat");
+        showMessage("Alat '" + data.name + "' berhasil ditambahkan", "ok");
+        form.reset();
+        loadItems();
+      } catch (err) {
+        showMessage(err.message, "error");
+      }
+    });
+
+    async function deleteItem(index, name) {
+      if (!confirm("Hapus alat '" + name + "'?")) return;
+      try {
+        const res = await fetch(API + "?index=" + index, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Gagal menghapus alat");
+        showMessage("Alat '" + name + "' berhasil dihapus", "ok");
+        loadItems();
+      } catch (err) {
+        showMessage(err.message, "error");
+      }
+    }
+
+    loadItems();
+    setInterval(loadItems, 10000);
+  </script>
+</body>
+</html>

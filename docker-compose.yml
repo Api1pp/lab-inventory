@@ -1,0 +1,34 @@
+services:
+  backend:
+    build: .
+    container_name: lab-backend
+    environment:
+      - DATA_DIR=/var/lib/backend_data
+    volumes:
+      - lab-inventory-data:/var/lib/backend_data   # Named Volume (data aman)
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  frontend:
+    image: nginx:alpine
+    container_name: lab-frontend
+    ports:
+      - "8081:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro        # Bind Mount (ubah UI tanpa rebuild)
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - app-net
+    restart: unless-stopped
+
+volumes:
+  lab-inventory-data:
+    name: lab-inventory-data
+
+networks:
+  app-net:
+    driver: bridge
+    name: app-net
