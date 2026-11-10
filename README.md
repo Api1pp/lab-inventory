@@ -132,8 +132,8 @@ Tahapan pipeline (`Jenkinsfile`):
 2. **`git push` gagal dari terminal VS Code (ECONNREFUSED ...vscode-git...sock)**: sesi terminal lama. Jalankan `unset GIT_ASKPASS VSCODE_GIT_ASKPASS_NODE VSCODE_GIT_ASKPASS_MAIN VSCODE_GIT_ASKPASS_EXTRA_ARGS VSCODE_GIT_IPC_HANDLE`, lalu push lagi.
 3. **`Conflict. The container name is already in use`**: nama proyek Compose berbeda. Pastikan baris `name: lab-inventory` di `docker-compose.yml` benar.
 4. **Jenkins gagal diinstal (kunci apt)**: tutorial lama memakai kunci 2023. Gunakan `jenkins.io-2026.key`.
-5. **Webhook GitHub menampilkan 403**: ISI dengan penyebab dan solusi yang kalian temukan.
+5. **Webhook GitHub menampilkan 403**: Hal ini dikarenakan terjadi Error not found atau tidak ada data yang terdefinisi sehingga gagal reachout
 
 ## Video Demo
 
-LINK_VIDEO_TAROH_SINI
+https://drive.google.com/file/d/1RihAQCXFv9QRf8p2jjda1Bp57jQO1k30/view?usp=sharing
